@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-uint8_t utf8_width (const unsigned char leading);
+uint8_t utf8_width (const uint8_t leading);
