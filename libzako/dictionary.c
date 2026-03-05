@@ -20,6 +20,8 @@ void dictionary_open (struct dictionary *memory, const char *file) {
   memory->mapping = mapping;
   memory->length  = information.st_size;
 
+  return;
+
 fail:
   perror ("dictionary");
 }
