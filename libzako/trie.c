@@ -11,7 +11,8 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
                   size_t length) {
   qsort (entries, length, sizeof (*entries), &trie_compare);
 
-  trie->length  = 26 * 26 * 26 * 26 * 26 + 1;
+  trie->length = 26 * 26 * 26 * 26 * 26 + 1;
+
   trie->base    = calloc (trie->length, sizeof (*trie->base));
   trie->check   = calloc (trie->length, sizeof (*trie->check));
   trie->records = calloc (trie->length, sizeof (*trie->records));
@@ -37,7 +38,6 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
           k = trie->base[k] + entries[j]->input[l] - 'a';
 
         struct trie_record *record = trie->records[k];
-
         if (!record)
           record = trie->records[k] = calloc (1, sizeof (*record));
         else
@@ -48,7 +48,6 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
           }
 
         record->kanji = strdup (entries[j]->kanji);
-
         continue;
       }
 
@@ -70,7 +69,6 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
 
       if (entries[j]->input[i + 1] == '\0') {
         struct trie_record *record = trie->records[k];
-
         if (!record)
           record = trie->records[k] = calloc (1, sizeof (*record));
 
@@ -79,7 +77,8 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
     }
   }
 
-  trie->length  = boundary;
+  trie->length = boundary;
+
   trie->base    = realloc (trie->base, boundary * sizeof (*trie->base));
   trie->check   = realloc (trie->check, boundary * sizeof (*trie->check));
   trie->records = realloc (trie->records, boundary * sizeof (*trie->records));
@@ -91,7 +90,6 @@ void trie_destroy (struct trie *trie) {
 
   for (size_t i = 0; i < trie->length; i++) {
     struct trie_record *record = trie->records[i];
-
     while (record) {
       struct trie_record *next_record = record->record;
       free (record->kanji);
