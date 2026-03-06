@@ -77,11 +77,12 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
     }
   }
 
-  trie->length = boundary;
+  trie->length = boundary + 1;
 
-  trie->base    = realloc (trie->base, boundary * sizeof (*trie->base));
-  trie->check   = realloc (trie->check, boundary * sizeof (*trie->check));
-  trie->records = realloc (trie->records, boundary * sizeof (*trie->records));
+  trie->base  = realloc (trie->base, trie->length * sizeof (*trie->base));
+  trie->check = realloc (trie->check, trie->length * sizeof (*trie->check));
+  trie->records =
+    realloc (trie->records, trie->length * sizeof (*trie->records));
 }
 
 void trie_destroy (struct trie *trie) {
