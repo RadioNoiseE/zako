@@ -90,6 +90,7 @@ void trie_destroy (struct trie *trie) {
 
   for (size_t i = 0; i < trie->length; i++) {
     struct trie_record *record = trie->records[i];
+
     while (record) {
       struct trie_record *next_record = record->record;
       free (record->kanji);
