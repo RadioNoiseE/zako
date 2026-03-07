@@ -135,7 +135,13 @@ char *zako_get_commit (struct zako *context) {
 }
 
 void zako_reset (struct zako *context) {
-  context->state->ready    = false;
-  context->state->input[0] = '\0';
-  context->state->preedit  = 0;
+  if (!context->state->ready) {
+    context->state->input[0] = '\0';
+
+    free (context->candidate->kanji);
+    context->candidate->kanji = NULL;
+  }
+
+  context->state->ready   = false;
+  context->state->preedit = 0;
 }
