@@ -73,6 +73,10 @@ bool zako_forward (struct zako *context, const char input) {
   }
 
   struct trie_record *record = context->trie->records[offset];
+
+  if (!record)
+    return false;
+
   while (record) {
     if (!context->candidate->kanji) {
       context->candidate->count = 1;
