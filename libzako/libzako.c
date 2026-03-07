@@ -117,6 +117,8 @@ void zako_select_next (struct zako *context) {
 }
 
 char *zako_get_preedit (struct zako *context) {
+  if (!context->candidate->kanji)
+    return context->state->input;
   return context->candidate->kanji[context->state->preedit];
 }
 
