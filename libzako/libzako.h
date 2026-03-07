@@ -25,3 +25,15 @@ struct zako {
   struct zako_state     *state;
   struct zako_candidate *candidate;
 };
+
+void zako_init (struct zako *context, const char *file);
+void zako_dispose (struct zako *context);
+
+bool zako_forward (struct zako *context, const char input);
+bool zako_backward (struct zako *context);
+
+void zako_select_previous (struct zako *context);
+void zako_select_next (struct zako *context);
+
+char *zako_get_preedit (struct zako *context);
+char *zako_get_commit (struct zako *context);
