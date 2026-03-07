@@ -22,8 +22,8 @@ struct dictionary_entry {
   char input[6];
 };
 
-void dictionary_open (struct dictionary *memory, const char *file);
-void dictionary_close (struct dictionary *memory);
+void dictionary_open (struct dictionary *dictionary, const char *file);
+void dictionary_close (struct dictionary *dictionary);
 
-struct dictionary_entry *dictionary_parse (struct dictionary *memory,
+struct dictionary_entry *dictionary_parse (struct dictionary *dictionary,
                                            size_t            *offset);

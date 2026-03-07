@@ -1,6 +1,6 @@
 #include "dictionary.h"
 
-void dictionary_open (struct dictionary *memory, const char *file) {
+void dictionary_open (struct dictionary *dictionary, const char *file) {
   int descriptor = open (file, O_RDONLY);
   if (descriptor == -1)
     goto fail;
@@ -17,8 +17,8 @@ void dictionary_open (struct dictionary *memory, const char *file) {
   if (close (descriptor) == -1)
     goto fail;
 
-  memory->mapping = mapping;
-  memory->length  = information.st_size;
+  dictionary->mapping = mapping;
+  dictionary->length  = information.st_size;
 
   return;
 
@@ -26,19 +26,19 @@ fail:
   perror ("dictionary");
 }
 
-void dictionary_close (struct dictionary *memory) {
-  if (munmap (memory->mapping, memory->length) == -1)
+void dictionary_close (struct dictionary *dictionary) {
+  if (munmap (dictionary->mapping, dictionary->length) == -1)
     perror ("dictionary");
 }
 
-struct dictionary_entry *dictionary_parse (struct dictionary *memory,
+struct dictionary_entry *dictionary_parse (struct dictionary *dictionary,
                                            size_t            *offset) {
-  if (*offset >= memory->length)
+  if (*offset >= dictionary->length)
     return NULL;
 
   struct dictionary_entry *entry = malloc (sizeof (*entry));
 
-  char   *buffer = memory->mapping;
+  char   *buffer = dictionary->mapping;
   uint8_t width;
 
   width = utf8_width ((uint8_t) buffer[*offset]);
@@ -48,7 +48,7 @@ struct dictionary_entry *dictionary_parse (struct dictionary *memory,
   *offset += width + 1;
 
   for (width = 0;
-       *offset + width < memory->length && buffer[*offset + width] != '\n';
+       *offset + width < dictionary->length && buffer[*offset + width] != '\n';
        width++)
     entry->input[width] = buffer[*offset + width];
   entry->input[width] = '\0';
