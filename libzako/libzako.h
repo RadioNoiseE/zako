@@ -37,3 +37,5 @@ void zako_select_next (struct zako *context);
 
 char *zako_get_preedit (struct zako *context);
 char *zako_get_commit (struct zako *context);
+
+void zako_reset (struct zako *context);
