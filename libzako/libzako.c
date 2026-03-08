@@ -51,9 +51,12 @@ bool zako_forward (struct zako *context, const char input) {
 
   size_t length = strlen (context->state->input);
   if (length == 5) {
-    context->state->dirty  = true;
-    context->state->commit = context->candidate->kanji[context->state->preedit];
-    length                 = 0;
+    context->state->dirty = true;
+    context->state->commit =
+      strdup (context->candidate->kanji
+                ? context->candidate->kanji[context->state->preedit]
+                : context->state->input);
+    length = 0;
   }
 
   context->state->input[length]     = input;
@@ -137,7 +140,9 @@ char *zako_get_commit (struct zako *context) {
 bool zako_should_commit (struct zako *context) { return context->state->dirty; }
 
 void zako_reset (struct zako *context) {
-  if (!context->state->dirty) {
+  if (context->state->dirty)
+    free (context->state->commit);
+  else {
     context->state->input[0] = '\0';
 
     free (context->candidate->kanji);
