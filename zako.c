@@ -1,5 +1,3 @@
-#include <sys/poll.h>
-#include <sys/timerfd.h>
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 
@@ -8,16 +6,13 @@
 #include "virtual-keyboard-unstable-v1.h"
 
 struct zako_wayland {
-  struct zako                               zako;
-  struct wl_display                        *display;
-  struct wl_registry                       *registry;
-  struct wl_list                            seats;
-  struct zwp_input_method_manager_v2       *input_method_manager;
-  struct zwp_input_method_keyboard_grab_v2 *keyboard_grab;
-  struct zwp_virtual_keyboard_manager_v1   *virtual_keyboard_manager;
-  bool                                      active;
-  int32_t                                   repeat_timer;
-  xkb_keycode_t                             repeat_keycode;
+  struct zako                             zako;
+  struct wl_display                      *display;
+  struct wl_registry                     *registry;
+  struct wl_list                          seats;
+  struct zwp_input_method_manager_v2     *input_method_manager;
+  struct zwp_virtual_keyboard_manager_v1 *virtual_keyboard_manager;
+  bool                                    active;
 };
 
 struct zako_seat {
@@ -32,7 +27,6 @@ struct zako_seat {
   struct zako                              *zako;
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
-  int32_t                                   repeat_rate, repeat_delay;
   uint32_t                                  name, serial;
 };
 
@@ -99,32 +93,6 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
   return handled;
 }
 
-static void zako_repeat (struct zako_wayland *wayland) {
-  struct zako_seat *seat;
-  struct timespec   timespec;
-  bool              handled;
-  uint64_t          expirations;
-
-  if (!wayland->repeat_keycode ||
-      read (wayland->repeat_timer, &expirations, sizeof (expirations)) !=
-        sizeof (expirations))
-    return;
-
-  clock_gettime (CLOCK_MONOTONIC, &timespec);
-
-  wl_list_for_each (seat, &wayland->seats,
-                    link) if (wayland->keyboard_grab ==
-                              seat->keyboard_grab) for (uint64_t i = 0;
-                                                        i < expirations; i++) {
-    handled = zako_dispatch (seat, wayland->repeat_keycode);
-    if (!handled)
-      zwp_virtual_keyboard_v1_key (
-        seat->virtual_keyboard,
-        timespec.tv_sec * (uint64_t) 1e3 + timespec.tv_nsec / (uint64_t) 1e6,
-        wayland->repeat_keycode - 8, WL_KEYBOARD_KEY_STATE_PRESSED);
-  }
-}
-
 static void input_method_keyboard_grab_listener_keymap (
   void *data, struct zwp_input_method_keyboard_grab_v2 *keyboard_grab,
   uint32_t format, int32_t fd, uint32_t size) {
@@ -151,8 +119,7 @@ static void input_method_keyboard_grab_listener_keymap (
 static void input_method_keyboard_grab_listener_key (
   void *data, struct zwp_input_method_keyboard_grab_v2 *keyboard_grab,
   uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
-  struct zako_seat *seat       = data;
-  seat->wayland->keyboard_grab = keyboard_grab;
+  struct zako_seat *seat = data;
 
   bool          handled = false;
   xkb_keycode_t keycode = key + 8;
@@ -174,33 +141,6 @@ static void input_method_keyboard_grab_listener_key (
 
   if (!handled)
     zwp_virtual_keyboard_v1_key (seat->virtual_keyboard, time, key, state);
-
-  if (state == WL_KEYBOARD_KEY_STATE_PRESSED && seat->repeat_rate > 0 &&
-      xkb_keymap_key_repeats (seat->keymap, keycode)) {
-    struct itimerspec timer = {
-      .it_value =
-        {
-          .tv_sec  = seat->repeat_delay / (uint64_t) 1e3,
-          .tv_nsec = (seat->repeat_delay % (uint64_t) 1e3) * (uint64_t) 1e6,
-        },
-      .it_interval =
-        {
-          .tv_sec  = 0,
-          .tv_nsec = (uint64_t) 1e9 / seat->repeat_rate,
-        },
-    };
-
-    timerfd_settime (seat->wayland->repeat_timer, 0, &timer, NULL);
-    seat->wayland->repeat_keycode = keycode;
-  }
-
-  if (state == WL_KEYBOARD_KEY_STATE_RELEASED &&
-      keycode == seat->wayland->repeat_keycode) {
-    struct itimerspec timer = {0};
-
-    timerfd_settime (seat->wayland->repeat_timer, 0, &timer, NULL);
-    seat->wayland->repeat_keycode = 0;
-  }
 }
 
 static void input_method_keyboard_grab_listener_modifiers (
@@ -217,11 +157,7 @@ static void input_method_keyboard_grab_listener_modifiers (
 
 static void input_method_keyboard_grab_listener_repeat_info (
   void *data, struct zwp_input_method_keyboard_grab_v2 *keyboard_grab,
-  int32_t rate, int32_t delay) {
-  struct zako_seat *seat = data;
-  seat->repeat_rate      = rate;
-  seat->repeat_delay     = delay;
-}
+  int32_t rate, int32_t delay) {}
 
 static const struct zwp_input_method_keyboard_grab_v2_listener
   input_method_keyboard_grab_listener = {
@@ -359,10 +295,7 @@ static void usage (FILE *out, const char *name) {
 
 int main (int argc, char *argv[]) {
   struct zako_wayland wayland = {0};
-
   wl_list_init (&wayland.seats);
-  wayland.repeat_timer   = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-  wayland.repeat_keycode = 0;
 
   int32_t opt;
   char   *dictionary = NULL;
@@ -405,29 +338,8 @@ int main (int argc, char *argv[]) {
     seat->zako = &wayland.zako;
   }
 
-  struct pollfd fds[2] = {
-    {
-      .fd     = wl_display_get_fd (wayland.display),
-      .events = POLLIN,
-    },
-    {
-      .fd     = wayland.repeat_timer,
-      .events = POLLIN,
-    },
-  };
-
-  while (true) {
-    wl_display_dispatch (wayland.display);
-
-    if (poll (fds, 2, -1) == -1)
-      break;
-
-    if (fds[0].revents & POLLIN)
-      wl_display_dispatch (wayland.display);
-
-    if (fds[1].revents & POLLIN)
-      zako_repeat (&wayland);
-  }
+  while (wl_display_dispatch (wayland.display) != -1)
+    ;
 
   struct zako_seat *tmp;
   wl_list_for_each_safe (seat, tmp, &wayland.seats, link) {
