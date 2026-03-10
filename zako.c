@@ -57,8 +57,10 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
   }
 
   if (!seat->wayland->active ||
-      xkb_state_mod_name_is_active (seat->state, XKB_MOD_NAME_CTRL,
-                                    XKB_STATE_MODS_EFFECTIVE))
+      xkb_state_mod_names_are_active (
+        seat->state, XKB_STATE_MODS_EFFECTIVE,
+        XKB_STATE_MATCH_ANY | XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_MOD_NAME_CTRL,
+        XKB_MOD_NAME_ALT, NULL))
     return false;
 
   bool handled = false;
