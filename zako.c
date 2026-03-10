@@ -78,12 +78,10 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
 
   switch (keysym) {
   case XKB_KEY_Left:
-    zako_select_previous (seat->zako);
-    handled = true;
+    handled = zako_select_previous (seat->zako);
     break;
   case XKB_KEY_Right:
-    zako_select_next (seat->zako);
-    handled = true;
+    handled = zako_select_next (seat->zako);
     break;
   case XKB_KEY_Return:
     commit  = strdup (zako_get_commit (seat->zako));
