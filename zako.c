@@ -33,18 +33,35 @@ struct zako_seat {
 static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
   xkb_keysym_t keysym = xkb_state_key_get_one_sym (seat->state, keycode);
 
+  char *preedit, *commit = NULL;
+
   if (keysym == XKB_KEY_backslash &&
       xkb_state_mod_name_is_active (seat->state, XKB_MOD_NAME_CTRL,
                                     XKB_STATE_MODS_EFFECTIVE)) {
+    if (seat->wayland->active && (commit = zako_get_commit (seat->zako))) {
+      commit = strdup (commit);
+      zako_reset (seat->zako);
+      preedit = strdup (zako_get_preedit (seat->zako));
+
+      zwp_input_method_v2_commit_string (seat->input_method, commit);
+      zwp_input_method_v2_set_preedit_string (seat->input_method, preedit, 0,
+                                              strlen (preedit));
+      zwp_input_method_v2_commit (seat->input_method, seat->serial);
+
+      free (commit);
+      free (preedit);
+    }
+
     seat->wayland->active ^= true;
     return true;
   }
 
-  if (!seat->wayland->active)
+  if (!seat->wayland->active ||
+      xkb_state_mod_name_is_active (seat->state, XKB_MOD_NAME_CTRL,
+                                    XKB_STATE_MODS_EFFECTIVE))
     return false;
 
-  bool  handled = false;
-  char *commit  = NULL;
+  bool handled = false;
 
   uint32_t key = xkb_keysym_to_utf32 (keysym);
   if (key >= 'a' && key <= 'z') {
@@ -53,10 +70,8 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
   }
 
   if (zako_should_commit (seat->zako)) {
-    commit = strdup (zako_get_commit (seat->zako));
-    zako_reset (seat->zako);
+    commit  = strdup (zako_get_commit (seat->zako));
     handled = true;
-    zwp_input_method_v2_commit_string (seat->input_method, commit);
   }
 
   switch (keysym) {
@@ -69,26 +84,27 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
     handled = true;
     break;
   case XKB_KEY_Return:
-    commit = strdup (zako_get_commit (seat->zako));
-    zako_reset (seat->zako);
+    commit  = strdup (zako_get_commit (seat->zako));
     handled = true;
-    zwp_input_method_v2_commit_string (seat->input_method, commit);
     break;
-  case XKB_KEY_Delete:
+  case XKB_KEY_BackSpace:
     handled = zako_backward (seat->zako);
   }
 
-  if (!handled)
-    return false;
+  if (!handled && (commit = zako_get_commit (seat->zako)))
+    commit = strdup (commit);
 
-  char *preedit = strdup (zako_get_preedit (seat->zako));
-  zwp_input_method_v2_set_preedit_string (seat->input_method, preedit, 0,
-                                          strlen (preedit));
+  if (commit) {
+    zako_reset (seat->zako);
+    zwp_input_method_v2_commit_string (seat->input_method, commit);
+    free (commit);
+  }
+
+  if ((preedit = zako_get_preedit (seat->zako)))
+    zwp_input_method_v2_set_preedit_string (seat->input_method, preedit, 0,
+                                            strlen (preedit));
 
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
-
-  free (commit);
-  free (preedit);
 
   return handled;
 }
