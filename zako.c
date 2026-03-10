@@ -85,13 +85,13 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
     break;
   case XKB_KEY_Return:
     commit  = strdup (zako_get_commit (seat->zako));
-    handled = true;
+    handled = commit[0] != '\0';
     break;
   case XKB_KEY_BackSpace:
     handled = zako_backward (seat->zako);
   }
 
-  if (!handled && (commit = zako_get_commit (seat->zako)))
+  if (!handled && !commit && (commit = zako_get_commit (seat->zako)))
     commit = strdup (commit);
 
   if (commit) {
