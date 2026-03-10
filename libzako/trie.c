@@ -20,7 +20,7 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
   trie->base[0]  = 1;
   trie->check[1] = 0;
 
-  size_t boundary = 26;
+  size_t boundary = 27;
 
   for (size_t i = 0; i < 5; i++) {
     char *previous = NULL;
