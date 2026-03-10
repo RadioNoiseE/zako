@@ -111,14 +111,22 @@ bool zako_backward (struct zako *context) {
   return true;
 }
 
-void zako_select_previous (struct zako *context) {
+bool zako_select_previous (struct zako *context) {
+  if (!context->candidate->kanji)
+    return false;
+
   if (context->state->preedit > 0)
     context->state->preedit--;
+  return true;
 }
 
-void zako_select_next (struct zako *context) {
+bool zako_select_next (struct zako *context) {
+  if (!context->candidate->kanji)
+    return false;
+
   if (context->state->preedit < context->candidate->count - 1)
     context->state->preedit++;
+  return true;
 }
 
 char *zako_get_preedit (struct zako *context) {
