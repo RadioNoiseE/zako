@@ -77,7 +77,7 @@ bool zako_forward (struct zako *context, const char input) {
 
   struct trie_record *record = context->trie->records[offset];
 
-  if (!record)
+  if (!record && offset != 0)
     return false;
 
   while (record) {
