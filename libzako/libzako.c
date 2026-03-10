@@ -77,7 +77,7 @@ bool zako_forward (struct zako *context, const char input) {
 
   struct trie_record *record = context->trie->records[offset];
 
-  if (!record && offset != 0)
+  if (!record)
     return false;
 
   while (record) {
@@ -106,7 +106,9 @@ bool zako_backward (struct zako *context) {
 
   context->state->input[length - 1] = '\0';
   // abuse zako_forward
-  return zako_forward (context, '\0');
+  zako_forward (context, '\0');
+
+  return true;
 }
 
 void zako_select_previous (struct zako *context) {
