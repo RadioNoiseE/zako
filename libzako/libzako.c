@@ -49,6 +49,8 @@ bool zako_forward (struct zako *context, const char input) {
     context->state->input[0] = '\0';
   }
 
+  context->state->preedit = 0;
+
   size_t length = strlen (context->state->input);
   if (length == 5) {
     context->state->dirty = true;
@@ -159,6 +161,5 @@ void zako_reset (struct zako *context) {
     context->candidate->kanji = NULL;
   }
 
-  context->state->dirty   = false;
-  context->state->preedit = 0;
+  context->state->dirty = false;
 }
