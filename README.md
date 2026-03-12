@@ -1,4 +1,6 @@
-zako (alongside libzako) is a minimal but performant Cangjie input method (library) implementation, targeting Wayland compositors that support the input method v2 protocol.
+## About
+
+zako (alongside libzako) is a minimal and performant Cangjie input method (library) implementation, targeting Wayland compositors that support the input method v2 and virtual keyboard v1 protocol.
 
 ## Installation
 
