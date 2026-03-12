@@ -28,7 +28,7 @@ struct zako_seat {
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
   uint32_t                                  name, serial;
-  xkb_keycode_t                             record[32];
+  xkb_keycode_t                             record[64];
 };
 
 static bool zako_pressed_dispatch (struct zako_seat *seat,
@@ -91,6 +91,7 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     break;
   case XKB_KEY_BackSpace:
     handled = zako_backward (seat->zako);
+    break;
   }
 
   if (!handled && !commit && (commit = zako_get_commit (seat->zako)))
