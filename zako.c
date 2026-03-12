@@ -28,9 +28,11 @@ struct zako_seat {
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
   uint32_t                                  name, serial;
+  xkb_keycode_t                             record[32];
 };
 
-static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
+static bool zako_pressed_dispatch (struct zako_seat *seat,
+                                   xkb_keycode_t     keycode) {
   xkb_keysym_t keysym = xkb_state_key_get_one_sym (seat->state, keycode);
 
   char *preedit, *commit = NULL;
@@ -106,6 +108,28 @@ static bool zako_dispatch (struct zako_seat *seat, xkb_keycode_t keycode) {
 
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
 
+  if (handled)
+    for (size_t i = 0; i < sizeof (seat->record) / sizeof (seat->record[0]);
+         i++)
+      if (seat->record[i] == 0) {
+        seat->record[i] = keycode;
+        break;
+      }
+
+  return handled;
+}
+
+static bool zako_released_dispatch (struct zako_seat *seat,
+                                    xkb_keycode_t     keycode) {
+  bool handled = false;
+
+  for (size_t i = 0; i < sizeof (seat->record) / sizeof (seat->record[0]); i++)
+    if (seat->record[i] == keycode) {
+      seat->record[i] = 0;
+      handled         = true;
+      break;
+    }
+
   return handled;
 }
 
@@ -143,15 +167,11 @@ static void input_method_keyboard_grab_listener_key (
   switch (state) {
   case WL_KEYBOARD_KEY_STATE_PRESSED:
     xkb_state_update_key (seat->state, keycode, XKB_KEY_DOWN);
-    handled = zako_dispatch (seat, keycode);
+    handled = zako_pressed_dispatch (seat, keycode);
     break;
   case WL_KEYBOARD_KEY_STATE_RELEASED:
     xkb_state_update_key (seat->state, keycode, XKB_KEY_UP);
-    break;
-  case WL_KEYBOARD_KEY_STATE_REPEATED:
-    if (!xkb_keymap_key_repeats (seat->keymap, keycode))
-      return;
-    handled = zako_dispatch (seat, keycode);
+    handled = zako_released_dispatch (seat, keycode);
     break;
   }
 
