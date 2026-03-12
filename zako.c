@@ -244,6 +244,7 @@ input_method_listener_done (void                       *data,
     zwp_input_method_keyboard_grab_v2_release (seat->keyboard_grab);
     seat->keyboard_grab = NULL;
     seat->active        = false;
+    memset (seat->record, 0, sizeof (seat->record));
   }
 
   seat->activate   = false;
