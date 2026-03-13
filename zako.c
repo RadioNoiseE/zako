@@ -110,8 +110,7 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
 
   if (handled)
-    for (size_t i = 0; i < sizeof (seat->record) / sizeof (seat->record[0]);
-         i++)
+    for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
       if (seat->record[i] == 0) {
         seat->record[i] = keycode;
         break;
@@ -124,7 +123,7 @@ static bool zako_released_dispatch (struct zako_seat *seat,
                                     xkb_keycode_t     keycode) {
   bool handled = false;
 
-  for (size_t i = 0; i < sizeof (seat->record) / sizeof (seat->record[0]); i++)
+  for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
     if (seat->record[i] == keycode) {
       seat->record[i] = 0;
       handled         = true;
