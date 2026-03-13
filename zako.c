@@ -28,7 +28,7 @@ struct zako_seat {
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
   uint32_t                                  name, serial;
-  xkb_keycode_t                             record[64];
+  xkb_keycode_t                             record[32];
 };
 
 static bool zako_pressed_dispatch (struct zako_seat *seat,
