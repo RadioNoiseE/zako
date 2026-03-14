@@ -1,9 +1,12 @@
+#include <time.h>
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "input-method-unstable-v2.h"
 #include "libzako/libzako.h"
 #include "virtual-keyboard-unstable-v1.h"
+
+#define length(pointer) (sizeof (pointer) / sizeof (*pointer))
 
 struct zako_wayland {
   struct zako                             zako;
@@ -28,7 +31,7 @@ struct zako_seat {
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
   uint32_t                                  name, serial;
-  xkb_keycode_t                             record[32];
+  xkb_keycode_t                             record[32], trace[32];
 };
 
 static bool zako_pressed_dispatch (struct zako_seat *seat,
@@ -47,15 +50,17 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     seat->wayland->active ^= true;
     handled                = true;
 
-    goto commit;
+    goto short_circuit_1;
   }
 
   if (!seat->wayland->active ||
       xkb_state_mod_names_are_active (
         seat->state, XKB_STATE_MODS_EFFECTIVE,
         XKB_STATE_MATCH_ANY | XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_MOD_NAME_CTRL,
-        XKB_MOD_NAME_ALT, NULL))
-    return false;
+        XKB_MOD_NAME_ALT, NULL)) {
+    handled = false;
+    goto short_circuit_2;
+  }
 
   uint32_t key = xkb_keysym_to_utf32 (keysym);
   if (key >= 'a' && key <= 'z') {
@@ -84,7 +89,7 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     break;
   }
 
-commit:
+short_circuit_1:
 
   if (!handled && !commit && (commit = zako_get_commit (seat->zako)))
     commit = strdup (commit);
@@ -102,9 +107,18 @@ commit:
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
 
   if (handled)
-    for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
+    for (size_t i = 0; i < length (seat->record); i++)
       if (seat->record[i] == 0) {
         seat->record[i] = keycode;
+        break;
+      }
+
+short_circuit_2:
+
+  if (!handled)
+    for (size_t i = 0; i < length (seat->trace); i++)
+      if (seat->trace[i] == 0) {
+        seat->trace[i] = keycode;
         break;
       }
 
@@ -115,14 +129,38 @@ static bool zako_released_dispatch (struct zako_seat *seat,
                                     xkb_keycode_t     keycode) {
   bool handled = false;
 
-  for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
+  for (size_t i = 0; i < length (seat->record); i++)
     if (seat->record[i] == keycode) {
       seat->record[i] = 0;
       handled         = true;
       break;
     }
 
+  if (!handled)
+    for (size_t i = 0; i < length (seat->trace); i++)
+      if (seat->trace[i] == keycode) {
+        seat->trace[i] = 0;
+        break;
+      }
+
   return handled;
+}
+
+static void zako_keyboard_reset (struct zako_seat *seat) {
+  memset (seat->record, 0, sizeof (seat->record));
+
+  struct timespec timespec;
+  clock_gettime (CLOCK_MONOTONIC, &timespec);
+
+  for (size_t i = 0; i < length (seat->trace); i++) {
+    if (seat->trace[i])
+      zwp_virtual_keyboard_v1_key (
+        seat->virtual_keyboard,
+        timespec.tv_sec * (uint64_t) 1e3 + timespec.tv_nsec / (uint64_t) 1e6,
+        seat->trace[i] - 8, WL_KEYBOARD_KEY_STATE_RELEASED);
+  }
+
+  zwp_virtual_keyboard_v1_modifiers (seat->virtual_keyboard, 0, 0, 0, 0);
 }
 
 static void input_method_keyboard_grab_listener_keymap (
@@ -233,10 +271,10 @@ input_method_listener_done (void                       *data,
       seat->keyboard_grab, &input_method_keyboard_grab_listener, seat);
     seat->active = true;
   } else if (seat->deactivate && seat->active) {
+    zako_keyboard_reset (seat);
     zwp_input_method_keyboard_grab_v2_release (seat->keyboard_grab);
     seat->keyboard_grab = NULL;
     seat->active        = false;
-    memset (seat->record, 0, sizeof (seat->record));
   }
 
   seat->activate   = false;
