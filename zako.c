@@ -47,17 +47,15 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     seat->wayland->active ^= true;
     handled                = true;
 
-    goto skip1;
+    goto commit;
   }
 
   if (!seat->wayland->active ||
       xkb_state_mod_names_are_active (
         seat->state, XKB_STATE_MODS_EFFECTIVE,
         XKB_STATE_MATCH_ANY | XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_MOD_NAME_CTRL,
-        XKB_MOD_NAME_ALT, NULL)) {
-    handled = false;
-    goto skip2;
-  }
+        XKB_MOD_NAME_ALT, NULL))
+    return false;
 
   uint32_t key = xkb_keysym_to_utf32 (keysym);
   if (key >= 'a' && key <= 'z') {
@@ -86,7 +84,7 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     break;
   }
 
-skip1:
+commit:
 
   if (!handled && !commit && (commit = zako_get_commit (seat->zako)))
     commit = strdup (commit);
@@ -102,8 +100,6 @@ skip1:
                                             strlen (preedit));
 
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
-
-skip2:
 
   if (handled)
     for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
