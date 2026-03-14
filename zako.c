@@ -6,8 +6,6 @@
 #include "libzako/libzako.h"
 #include "virtual-keyboard-unstable-v1.h"
 
-#define length(pointer) (sizeof (pointer) / sizeof (*pointer))
-
 struct zako_wayland {
   struct zako                             zako;
   struct wl_display                      *display;
@@ -16,6 +14,7 @@ struct zako_wayland {
   struct zwp_input_method_manager_v2     *input_method_manager;
   struct zwp_virtual_keyboard_manager_v1 *virtual_keyboard_manager;
   bool                                    active;
+  size_t                                  rollover;
 };
 
 struct zako_seat {
@@ -31,7 +30,7 @@ struct zako_seat {
   struct zako_wayland                      *wayland;
   bool                                      active, activate, deactivate;
   uint32_t                                  name, serial;
-  xkb_keycode_t                             internal[32], external[32];
+  xkb_keycode_t                            *internal, *external;
 };
 
 static bool zako_pressed_dispatch (struct zako_seat *seat,
@@ -109,13 +108,13 @@ l1:
 l2:
 
   if (handled) {
-    for (size_t i = 0; i < length (seat->internal); i++)
+    for (size_t i = 0; i < seat->wayland->rollover; i++)
       if (seat->internal[i] == 0) {
         seat->internal[i] = keycode;
         break;
       }
   } else
-    for (size_t i = 0; i < length (seat->external); i++)
+    for (size_t i = 0; i < seat->wayland->rollover; i++)
       if (seat->external[i] == 0) {
         seat->external[i] = keycode;
         break;
@@ -128,7 +127,7 @@ static bool zako_released_dispatch (struct zako_seat *seat,
                                     xkb_keycode_t     keycode) {
   bool handled = false;
 
-  for (size_t i = 0; i < length (seat->internal); i++)
+  for (size_t i = 0; i < seat->wayland->rollover; i++)
     if (seat->internal[i] == keycode) {
       seat->internal[i] = 0;
       handled           = true;
@@ -136,7 +135,7 @@ static bool zako_released_dispatch (struct zako_seat *seat,
     }
 
   if (!handled)
-    for (size_t i = 0; i < length (seat->external); i++)
+    for (size_t i = 0; i < seat->wayland->rollover; i++)
       if (seat->external[i] == keycode) {
         seat->external[i] = 0;
         break;
@@ -146,16 +145,17 @@ static bool zako_released_dispatch (struct zako_seat *seat,
 }
 
 static void zako_keyboard_reset (struct zako_seat *seat) {
-  memset (seat->internal, 0, sizeof (seat->internal));
+  memset (seat->internal, 0,
+          seat->wayland->rollover * sizeof (*seat->internal));
 
   struct timespec timespec;
   clock_gettime (CLOCK_MONOTONIC, &timespec);
 
-  for (size_t i = 0; i < length (seat->external); i++) {
+  for (size_t i = 0; i < seat->wayland->rollover; i++) {
     if (seat->external[i])
       zwp_virtual_keyboard_v1_key (
         seat->virtual_keyboard,
-        timespec.tv_sec * (uint32_t) 1e3 + timespec.tv_nsec / (uint32_t) 1e6,
+        timespec.tv_sec * (uint64_t) 1e3 + timespec.tv_nsec / (uint64_t) 1e6,
         seat->external[i] - 8, WL_KEYBOARD_KEY_STATE_RELEASED);
   }
 
@@ -302,10 +302,12 @@ static void registry_listener_global (void *data, struct wl_registry *registry,
   if (strcmp (interface, wl_seat_interface.name) == 0) {
     struct zako_seat *seat = calloc (1, sizeof (*seat));
 
-    seat->seat    = wl_registry_bind (registry, name, &wl_seat_interface, 7);
-    seat->context = xkb_context_new (XKB_CONTEXT_NO_FLAGS);
-    seat->wayland = wayland;
-    seat->name    = name;
+    seat->seat     = wl_registry_bind (registry, name, &wl_seat_interface, 7);
+    seat->context  = xkb_context_new (XKB_CONTEXT_NO_FLAGS);
+    seat->wayland  = wayland;
+    seat->name     = name;
+    seat->internal = calloc (wayland->rollover, sizeof (*seat->internal));
+    seat->external = calloc (wayland->rollover, sizeof (*seat->external));
 
     wl_list_insert (&wayland->seats, &seat->link);
   } else if (strcmp (interface, zwp_input_method_manager_v2_interface.name) ==
@@ -339,6 +341,9 @@ static void registry_listener_global_remove (void               *data,
     xkb_keymap_unref (seat->keymap);
     xkb_context_unref (seat->context);
 
+    free (seat->internal);
+    free (seat->external);
+
     free (seat);
   }
 }
@@ -352,8 +357,9 @@ static void usage (FILE *out, const char *name) {
   fprintf (out,
            "Usage: %s [options...]\n"
            "\n"
-           " -h         Show the help message and quit.\n"
-           " -d <file>  Load in appropriate dictionary.\n"
+           " -h         Display this help message and quit.\n"
+           " -d <path>  Configure path to the dictionary.\n"
+           " -n <size>  Support up to n-key rollover (default: 32).\n"
            "\n"
            "Copyright (C) 2026 Jing Huang.\n",
            name);
@@ -366,13 +372,16 @@ int main (int argc, char *argv[]) {
   int32_t opt;
   char   *dictionary = NULL;
 
-  while ((opt = getopt (argc, argv, "hd:")) != -1) {
+  while ((opt = getopt (argc, argv, "hd:n:")) != -1) {
     switch (opt) {
     case 'h':
       usage (stdout, *argv);
       return 0;
     case 'd':
       dictionary = strdup (optarg);
+      break;
+    case 'n':
+      wayland.rollover = atoi (optarg);
       break;
     default:
       usage (stderr, *argv);
@@ -384,6 +393,9 @@ int main (int argc, char *argv[]) {
     return 1;
   zako_init (&wayland.zako, dictionary);
   free (dictionary);
+
+  if (!wayland.rollover)
+    wayland.rollover = 32;
 
   wayland.display  = wl_display_connect (NULL);
   wayland.registry = wl_display_get_registry (wayland.display);
@@ -421,6 +433,9 @@ int main (int argc, char *argv[]) {
     xkb_state_unref (seat->state);
     xkb_keymap_unref (seat->keymap);
     xkb_context_unref (seat->context);
+
+    free (seat->internal);
+    free (seat->external);
 
     free (seat);
   }
