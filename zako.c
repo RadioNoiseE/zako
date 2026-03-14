@@ -35,37 +35,29 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
                                    xkb_keycode_t     keycode) {
   xkb_keysym_t keysym = xkb_state_key_get_one_sym (seat->state, keycode);
 
+  bool  handled = false;
   char *preedit, *commit = NULL;
 
   if (keysym == XKB_KEY_backslash &&
       xkb_state_mod_name_is_active (seat->state, XKB_MOD_NAME_CTRL,
                                     XKB_STATE_MODS_EFFECTIVE)) {
-    if (seat->wayland->active && (commit = zako_get_commit (seat->zako))) {
+    if (seat->wayland->active && (commit = zako_get_commit (seat->zako)))
       commit = strdup (commit);
-      zako_reset (seat->zako);
-      preedit = strdup (zako_get_preedit (seat->zako));
-
-      zwp_input_method_v2_commit_string (seat->input_method, commit);
-      zwp_input_method_v2_set_preedit_string (seat->input_method, preedit, 0,
-                                              strlen (preedit));
-      zwp_input_method_v2_commit (seat->input_method, seat->serial);
-
-      free (commit);
-      free (preedit);
-    }
 
     seat->wayland->active ^= true;
-    return true;
+    handled                = true;
+
+    goto skip1;
   }
 
   if (!seat->wayland->active ||
       xkb_state_mod_names_are_active (
         seat->state, XKB_STATE_MODS_EFFECTIVE,
         XKB_STATE_MATCH_ANY | XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_MOD_NAME_CTRL,
-        XKB_MOD_NAME_ALT, NULL))
-    return false;
-
-  bool handled = false;
+        XKB_MOD_NAME_ALT, NULL)) {
+    handled = false;
+    goto skip2;
+  }
 
   uint32_t key = xkb_keysym_to_utf32 (keysym);
   if (key >= 'a' && key <= 'z') {
@@ -94,6 +86,8 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     break;
   }
 
+skip1:
+
   if (!handled && !commit && (commit = zako_get_commit (seat->zako)))
     commit = strdup (commit);
 
@@ -108,6 +102,8 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
                                             strlen (preedit));
 
   zwp_input_method_v2_commit (seat->input_method, seat->serial);
+
+skip2:
 
   if (handled)
     for (size_t i = 0; i < sizeof (seat->record) / sizeof (*seat->record); i++)
