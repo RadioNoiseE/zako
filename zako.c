@@ -152,11 +152,13 @@ static void zako_keyboard_reset (struct zako_seat *seat) {
   clock_gettime (CLOCK_MONOTONIC, &timespec);
 
   for (size_t i = 0; i < seat->wayland->rollover; i++) {
-    if (seat->external[i])
+    if (seat->external[i]) {
       zwp_virtual_keyboard_v1_key (
         seat->virtual_keyboard,
         timespec.tv_sec * (uint64_t) 1e3 + timespec.tv_nsec / (uint64_t) 1e6,
         seat->external[i] - 8, WL_KEYBOARD_KEY_STATE_RELEASED);
+      seat->external[i] = 0;
+    }
   }
 
   zwp_virtual_keyboard_v1_modifiers (seat->virtual_keyboard, 0, 0, 0, 0);
