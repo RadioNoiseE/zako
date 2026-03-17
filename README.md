@@ -19,7 +19,7 @@ clang *.c libzako/*.c -o zako -lwayland-client -lxkbcommon -O3 -flto
 
 ## Usage
 
-Currently zako does not support many configuration options. A Cangjie dictionary, like [this one](https://github.com/LdBeth/cim/blob/main/UnihanCangjieTable.txt), is required. Consult `zako -h` for more information on supported options.
+Currently zako does not support many configuration options. A Cangjie dictionary, like [this one](./dictionary.txt), is required. Consult `zako -h` for more information on supported options.
 
 It operates in two states, active and inactive (default). When zako is active, it translates a set of keystrokes for input method purposes. <kbd>C-\\</kbd> toggles between states, <kbd>left</kbd> and <kbd>right</kbd> traverse between candidates, and <kbd>enter</kbd> commits the current pre-edit string.
 
