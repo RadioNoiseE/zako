@@ -18,8 +18,8 @@ struct dictionary {
 };
 
 struct dictionary_entry {
-  char kanji[5];
   char input[6];
+  char kanji[5];
 };
 
 void dictionary_open (struct dictionary *dictionary, const char *file);

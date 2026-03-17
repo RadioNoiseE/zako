@@ -41,17 +41,17 @@ struct dictionary_entry *dictionary_parse (struct dictionary *dictionary,
   char   *buffer = dictionary->mapping;
   uint8_t width;
 
-  width = utf8_width ((uint8_t) buffer[*offset]);
-  memcpy (entry->kanji, buffer + *offset, width);
-  entry->kanji[width] = '\0';
-
-  *offset += width + 1;
-
-  for (width = 0;
-       *offset + width < dictionary->length && buffer[*offset + width] != '\n';
+  for (width = 0; width < 5 && *offset + width < dictionary->length &&
+                  buffer[*offset + width] != '\t';
        width++)
     entry->input[width] = buffer[*offset + width];
   entry->input[width] = '\0';
+
+  *offset += width + 1;
+
+  width = utf8_width ((uint8_t) buffer[*offset]);
+  memcpy (entry->kanji, buffer + *offset, width);
+  entry->kanji[width] = '\0';
 
   *offset += width + 1;
 
