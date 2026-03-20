@@ -1,20 +1,21 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dictionary.h"
 
-struct trie_record {
-  char               *kanji;
-  struct trie_record *record;
+struct trie_data {
+  char             *kanji;
+  struct trie_data *data;
 };
 
 struct trie {
-  size_t              *base;
-  size_t              *check;
-  struct trie_record **records;
-  size_t               length;
+  size_t            *base;
+  size_t            *check;
+  struct trie_data **data;
+  size_t             size;
 };
 
 void trie_create (struct trie *trie, struct dictionary_entry **entries,
