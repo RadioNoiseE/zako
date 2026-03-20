@@ -77,12 +77,12 @@ bool zako_forward (struct zako *context, const char input) {
       return false;
   }
 
-  struct trie_record *record = context->trie->records[offset];
+  struct trie_data *data = context->trie->data[offset];
 
-  if (!record)
+  if (!data)
     return false;
 
-  while (record) {
+  while (data) {
     if (!context->candidate->kanji) {
       context->candidate->count = 1;
       context->candidate->kanji = malloc (sizeof (*context->candidate->kanji));
@@ -93,8 +93,8 @@ bool zako_forward (struct zako *context, const char input) {
         context->candidate->count * sizeof (*context->candidate->kanji));
     }
 
-    context->candidate->kanji[context->candidate->count - 1] = record->kanji;
-    record                                                   = record->record;
+    context->candidate->kanji[context->candidate->count - 1] = data->kanji;
+    data                                                     = data->data;
   }
 
   return true;
