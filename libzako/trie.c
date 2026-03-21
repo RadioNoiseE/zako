@@ -48,12 +48,11 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
       for (l = 1; l < h; l++) {
         b = false;
 
-        for (n = 0; n < m; n++) {
+        for (n = 0; n < m; n++)
           if (trie->check[l + e[n]] != -1) {
             b = true;
             break;
           }
-        }
 
         if (!b)
           break;
