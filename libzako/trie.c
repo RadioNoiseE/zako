@@ -33,7 +33,6 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
         ;
 
       m = c = 0;
-      memset (e, 0, sizeof (e));
       for (l = j; l < k; l++)
         if (strlen (entries[l]->input) > i && (d = entries[l]->input[i]) != c) {
           c      = d;
