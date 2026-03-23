@@ -155,7 +155,8 @@ void zako_reset (struct zako *context) {
   if (context->state->dirty)
     free (context->state->commit);
   else {
-    context->state->input[0] = '\0';
+    if (context->state->input)
+      context->state->input[0] = '\0';
 
     free (context->candidate->kanji);
     context->candidate->kanji = NULL;
