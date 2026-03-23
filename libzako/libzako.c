@@ -101,6 +101,9 @@ bool zako_forward (struct zako *context, const char input) {
 }
 
 bool zako_backward (struct zako *context) {
+  if (!context->state->input)
+    return false;
+
   size_t length = strlen (context->state->input);
 
   if (length == 0)
