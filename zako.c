@@ -145,6 +145,8 @@ static bool zako_released_dispatch (struct zako_seat *seat,
 }
 
 static void zako_keyboard_reset (struct zako_seat *seat) {
+  zako_reset (seat->zako);
+
   memset (seat->internal, 0,
           seat->wayland->rollover * sizeof (*seat->internal));
 
