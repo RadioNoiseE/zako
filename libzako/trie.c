@@ -7,7 +7,8 @@ static int trie_compare (const void *a, const void *b) {
   int result = strcmp (entry_a->input, entry_b->input);
 
   if (!result)
-    result = entry_a->offset - entry_b->offset;
+    return (entry_a->offset > entry_b->offset) -
+           (entry_a->offset < entry_b->offset);
 
   return result;
 }
