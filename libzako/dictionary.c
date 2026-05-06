@@ -38,6 +38,8 @@ struct dictionary_entry *dictionary_parse (struct dictionary *dictionary,
 
   struct dictionary_entry *entry = malloc (sizeof (*entry));
 
+  entry->offset = *offset;
+
   char   *buffer = dictionary->mapping;
   uint8_t width;
 

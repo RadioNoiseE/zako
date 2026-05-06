@@ -4,7 +4,8 @@ static int trie_compare (const void *a, const void *b) {
   const struct dictionary_entry *entry_a = *(struct dictionary_entry **) a;
   const struct dictionary_entry *entry_b = *(struct dictionary_entry **) b;
 
-  return strcmp (entry_a->input, entry_b->input);
+  return strcmp (entry_a->input, entry_b->input)
+         ?: entry_a->offset - entry_b->offset;
 }
 
 void trie_create (struct trie *trie, struct dictionary_entry **entries,
