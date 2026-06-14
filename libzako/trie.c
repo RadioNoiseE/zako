@@ -17,19 +17,17 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
                   size_t length) {
   qsort (entries, length, sizeof (*entries), &trie_compare);
 
-  trie->size = 26 * 26 * 26 * 26 * 26 + 1;
+  trie->size = (26 * 26 * 26 * 26 * 26 * 26 - 1) / 25 + 1;
 
   trie->base  = calloc (trie->size, sizeof (*trie->base));
   trie->check = calloc (trie->size, sizeof (*trie->check));
   trie->data  = calloc (trie->size, sizeof (*trie->data));
 
-  memset (trie->check, -1, trie->size * sizeof (*trie->check));
-
   bool   b;
   char   c, d, e[26];
   size_t h, i, j, k, l, m, n, o, p;
 
-  h = 1;
+  h = 2;
 
   for (i = 0; i < 5; i++) {
     for (j = 0; j < length;) {
@@ -50,11 +48,11 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
         continue;
       }
 
-      for (l = 1; l < h; l++) {
+      for (l = 2; l < h; l++) {
         b = false;
 
         for (n = 0; n < m; n++)
-          if (trie->check[l + e[n]] != -1) {
+          if (trie->check[l + e[n]] != 0) {
             b = true;
             break;
           }
@@ -66,7 +64,7 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
       if (h <= (n = l + e[m - 1]))
         h = n + 1;
 
-      n = 0;
+      n = 1;
       for (o = 0; o < i; o++)
         n = trie->base[n] + entries[j]->input[o] - 'a';
 

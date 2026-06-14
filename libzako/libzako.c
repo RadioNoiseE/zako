@@ -69,7 +69,7 @@ bool zako_forward (struct zako *context, const char input) {
   free (context->candidate->kanji);
   context->candidate->kanji = NULL;
 
-  size_t offset = 0, check;
+  size_t offset = 1, check;
   for (size_t i = 0; i < length; i++) {
     check  = offset;
     offset = context->trie->base[offset] + context->state->input[i] - 'a';
