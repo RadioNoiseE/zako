@@ -73,14 +73,12 @@ bool zako_forward (struct zako *context, const char input) {
   for (size_t i = 0; i < length; i++) {
     check  = offset;
     offset = context->trie->base[offset] + context->state->input[i] - 'a';
-    if (context->trie->check[offset] != check)
-      return false;
+    if (context->trie->check[offset] != check) return false;
   }
 
   struct trie_data *data = context->trie->data[offset];
 
-  if (!data)
-    return false;
+  if (!data) return false;
 
   while (data) {
     if (!context->candidate->kanji) {
@@ -101,13 +99,11 @@ bool zako_forward (struct zako *context, const char input) {
 }
 
 bool zako_backward (struct zako *context) {
-  if (!context->state->input)
-    return false;
+  if (!context->state->input) return false;
 
   size_t length = strlen (context->state->input);
 
-  if (length == 0)
-    return false;
+  if (length == 0) return false;
 
   context->state->input[length - 1] = '\0';
   // abuse zako_forward
@@ -117,17 +113,14 @@ bool zako_backward (struct zako *context) {
 }
 
 bool zako_select_previous (struct zako *context) {
-  if (!context->candidate->kanji)
-    return false;
+  if (!context->candidate->kanji) return false;
 
-  if (context->state->preedit > 0)
-    context->state->preedit--;
+  if (context->state->preedit > 0) context->state->preedit--;
   return true;
 }
 
 bool zako_select_next (struct zako *context) {
-  if (!context->candidate->kanji)
-    return false;
+  if (!context->candidate->kanji) return false;
 
   if (context->state->preedit < context->candidate->count - 1)
     context->state->preedit++;
@@ -135,8 +128,7 @@ bool zako_select_next (struct zako *context) {
 }
 
 char *zako_get_preedit (struct zako *context) {
-  if (!context->candidate->kanji)
-    return context->state->input;
+  if (!context->candidate->kanji) return context->state->input;
   return context->candidate->kanji[context->state->preedit];
 }
 
@@ -145,21 +137,20 @@ char *zako_get_commit (struct zako *context) {
     if (context->candidate->kanji)
       context->state->commit =
         context->candidate->kanji[context->state->preedit];
-    else
-      context->state->commit = context->state->input;
+    else context->state->commit = context->state->input;
   }
 
   return context->state->commit;
 }
 
-bool zako_should_commit (struct zako *context) { return context->state->dirty; }
+bool zako_should_commit (struct zako *context) {
+  return context->state->dirty;
+}
 
 void zako_reset (struct zako *context) {
-  if (context->state->dirty)
-    free (context->state->commit);
+  if (context->state->dirty) free (context->state->commit);
   else {
-    if (context->state->input)
-      context->state->input[0] = '\0';
+    if (context->state->input) context->state->input[0] = '\0';
 
     free (context->candidate->kanji);
     context->candidate->kanji = NULL;

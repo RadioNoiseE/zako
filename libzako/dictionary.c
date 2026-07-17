@@ -2,20 +2,16 @@
 
 void dictionary_open (struct dictionary *dictionary, const char *file) {
   int descriptor = open (file, O_RDONLY);
-  if (descriptor == -1)
-    goto fail;
+  if (descriptor == -1) goto fail;
 
   struct stat information;
-  if (fstat (descriptor, &information) == -1)
-    goto fail;
+  if (fstat (descriptor, &information) == -1) goto fail;
 
   void *mapping =
     mmap (NULL, information.st_size, PROT_READ, MAP_PRIVATE, descriptor, 0);
-  if (mapping == MAP_FAILED)
-    goto fail;
+  if (mapping == MAP_FAILED) goto fail;
 
-  if (close (descriptor) == -1)
-    goto fail;
+  if (close (descriptor) == -1) goto fail;
 
   dictionary->mapping = mapping;
   dictionary->length  = information.st_size;
@@ -33,8 +29,7 @@ void dictionary_close (struct dictionary *dictionary) {
 
 struct dictionary_entry *dictionary_parse (struct dictionary *dictionary,
                                            size_t            *offset) {
-  if (*offset >= dictionary->length)
-    return NULL;
+  if (*offset >= dictionary->length) return NULL;
 
   struct dictionary_entry *entry = malloc (sizeof (*entry));
 

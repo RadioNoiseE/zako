@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "unicode.h"
+#include "utf8.h"
 
 struct dictionary {
   void  *mapping;

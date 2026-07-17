@@ -57,12 +57,10 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
             break;
           }
 
-        if (!b)
-          break;
+        if (!b) break;
       }
 
-      if (h <= (n = l + e[m - 1]))
-        h = n + 1;
+      if (h <= (n = l + e[m - 1])) h = n + 1;
 
       n = 1;
       for (o = 0; o < i; o++)
@@ -77,12 +75,10 @@ void trie_create (struct trie *trie, struct dictionary_entry **entries,
           p                      = l + entries[o]->input[i] - 'a';
           struct trie_data *data = trie->data[p];
 
-          if (!data)
-            data = trie->data[p] = calloc (1, sizeof (*data));
+          if (!data) data = trie->data[p] = calloc (1, sizeof (*data));
           else
             while (data->kanji) {
-              if (!data->data)
-                data->data = calloc (1, sizeof (*data));
+              if (!data->data) data->data = calloc (1, sizeof (*data));
               data = data->data;
             }
 

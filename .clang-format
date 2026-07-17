@@ -24,6 +24,8 @@ AlignEscapedNewlines: Right
 AlignOperands: AlignAfterOperator
 AlignTrailingComments:
   Kind: Always
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 ContinuationIndentWidth: 2
 SpaceAfterCStyleCast: true
 SpaceBeforeParens: Always
