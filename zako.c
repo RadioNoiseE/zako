@@ -83,8 +83,7 @@ static bool zako_pressed_dispatch (struct zako_seat *seat,
     if ((commit = zako_get_commit (seat->zako))) {
       commit  = strdup (commit);
       handled = commit[0] != '\0';
-    } else
-      handled = false;
+    } else handled = false;
     break;
   case XKB_KEY_BackSpace:
     handled = zako_backward (seat->zako);
@@ -176,8 +175,7 @@ static void input_method_keyboard_grab_listener_keymap (
 
   zwp_virtual_keyboard_v1_keymap (seat->virtual_keyboard, format, fd, size);
 
-  if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
-    return;
+  if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) return;
 
   xkb_state_unref (seat->state);
   xkb_keymap_unref (seat->keymap);
@@ -396,13 +394,12 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  if (!dictionary)
-    return 1;
+  if (!dictionary) return 1;
+
   zako_init (&wayland.zako, dictionary);
   free (dictionary);
 
-  if (!wayland.rollover)
-    wayland.rollover = 32;
+  if (!wayland.rollover) wayland.rollover = 32;
 
   wayland.display  = wl_display_connect (NULL);
   wayland.registry = wl_display_get_registry (wayland.display);
