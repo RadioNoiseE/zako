@@ -8529,19 +8529,28 @@ yukmr	𬺈
 yuoll	𬹼
 zxa	，
 zxa	、
+xzxa	、
 zxb	；
 zxb	：
+xzxb	：
 zxc	。
 zxc	．
+xzxc	．
 zxd	？
 zxd	！
+xzxd	！
 zxe	・
 zxe	　
+xzxe	　
 zxf	…
 zxf	—
+xzxf	—
 zxg	（
 zxg	）
+xzxg	）
 zxh	「
 zxh	」
+xzxh	」
 zxi	『
 zxi	』
+xzxi	』
